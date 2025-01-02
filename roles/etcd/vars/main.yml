@@ -1,0 +1,6 @@
+---
+# vars file for ansible-role-etcd
+_etcd_default_password: postgres
+_etcd_installation_script_name: install-etcd.sh
+_etcd_installation_script_path: "{{ etcd_installation_dir }}/install-etcd.sh"
+_etcd_local_ip_address: "{{ lookup('vars', 'ansible_' + etcd_host_interface_name)['ipv4']['address'] }}"

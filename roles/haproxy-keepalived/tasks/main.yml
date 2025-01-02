@@ -1,0 +1,29 @@
+---
+# tasks file for ansible-role-haproxy-keepalived
+- name: Install haproxy and keepalived packages
+  ansible.builtin.apt:
+    name:
+      - haproxy
+      - keepalived
+    state: present
+    update_cache: true
+
+- name: Copy haproxy config
+  ansible.builtin.template:
+    src: "{{ haproxy_keepalived_haproxy_cfg_template }}"
+    dest: "{{ haproxy_keepalived_haproxy_cfg_path }}"
+    owner: "{{ haproxy_keepalived_remote_user }}"
+    group: nogroup
+    mode: '0664'
+  notify:
+    - Restart haproxy
+
+- name: Copy keepalived config
+  ansible.builtin.template:
+    src: "{{ haproxy_keepalived_keepalived_conf_template }}"
+    dest: "{{ haproxy_keepalived_keepalived_conf_path }}"
+    owner: "{{ haproxy_keepalived_remote_user }}"
+    group: nogroup
+    mode: '0664'
+  notify:
+    - Restart keepalived

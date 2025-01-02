@@ -1,0 +1,10 @@
+---
+# handlers file for ansible-role-etcd
+- name: Restart systemd
+  ansible.builtin.shell: |
+    systemctl daemon-reload
+
+- name: Restart etcd
+  ansible.builtin.shell: |
+    systemctl enable etcd
+    systemctl restart etcd

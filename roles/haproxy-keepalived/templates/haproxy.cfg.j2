@@ -1,0 +1,43 @@
+global
+    maxconn 100
+
+defaults
+    log global
+    mode tcp
+    retries 2
+    timeout client 30m
+    timeout connect 4s
+    timeout server 30m
+    timeout check 5s
+
+listen stats
+    mode http
+    bind *:7000
+    stats enable
+    stats uri /
+
+frontend patroni-prod
+        mode tcp
+        maxconn 5000
+        bind *:5432
+        default_backend patroni_servers
+
+
+backend patroni_servers
+        mode tcp
+        option httpchk OPTIONS /leader
+        http-check expect status 200
+        default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+
+{% for item in haproxy_keepalived_postgresql_hosts %}
+        server {{ item.name }} {{ item.host }}:5432 maxconn 100 check port 8008
+{% endfor %}
+
+listen postgres
+    bind *:5000
+    option httpchk
+    http-check expect status 200
+    default-server inter 3s fall 3 rise 2 on-marked-down shutdown-sessions
+{% for item in haproxy_keepalived_postgresql_hosts %}
+    server {{ item.name }} {{ item.host }}:5432 maxconn 100 check port 8008
+{% endfor %}

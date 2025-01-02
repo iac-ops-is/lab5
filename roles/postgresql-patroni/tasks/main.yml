@@ -1,0 +1,135 @@
+---
+# tasks file for ansible-role-postgresql-patroni
+- name: Add postgresql apt repository
+  ansible.builtin.shell: |
+    sh -c 'echo "deb {{ postgresql_patroni_apt_repo_url }} $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    wget --quiet -O - {{ postgresql_patroni_apt_key_url }} | sudo apt-key add -
+    apt-get update
+
+- name: Install postgresql
+  ansible.builtin.apt:
+    name:
+      - "postgresql-{{ postgresql_patroni_postgresql_major_version }}"
+      - "postgresql-contrib"
+    state: present
+    update_cache: true
+  register: postgresql_installation
+
+- name: Stop postgresql
+  ansible.builtin.shell: |
+    systemctl stop postgresql
+  when: postgresql_installation.changed
+
+- name: Create postgersql symlink
+  ansible.builtin.shell: |
+    ln -s {{ _postgresql_patroni_installation_dir }}/{{ postgresql_patroni_postgresql_major_version }}/bin/* /usr/sbin/
+  when: postgresql_installation.changed
+
+- name: Install python packages
+  ansible.builtin.apt:
+    name:
+      - python3-pip
+      - python3-dev
+      - python3-venv
+      - libpq-dev
+    state: present
+    update_cache: true
+
+- name: Create python venv directory if not exists
+  ansible.builtin.file:
+    path: "{{ postgresql_patroni_python_venv_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Create python virtual environment
+  ansible.builtin.shell: |
+    python3 -m venv {{ postgresql_patroni_python_venv_path }}
+
+- name: Pip install modules
+  ansible.builtin.pip:
+    name:
+      - patroni
+      - python-etcd
+      - psycopg2
+    virtualenv: "{{ postgresql_patroni_python_venv_path }}"
+
+- name: Create postgresql data directory if not exists
+  ansible.builtin.file:
+    path: "{{ postgresql_patroni_data_dir }}"
+    state: directory
+    mode: '0700'
+    group: "{{ postgresql_patroni_postgresql_remote_user }}"
+    owner: "{{ postgresql_patroni_postgresql_remote_user }}"
+
+- name: Create systemd unit file
+  ansible.builtin.template:
+    src: "patroni.service.j2"
+    dest: "{{ postgresql_patroni_systemd_dir }}/patroni.service"
+    owner: "{{ postgresql_patroni_postgresql_remote_user }}"
+    group: "{{ postgresql_patroni_postgresql_remote_user }}"
+    mode: '0664'
+  register: patroni_restart
+
+- name: Create patroni config file
+  ansible.builtin.template:
+    src: "patroni.yml.j2"
+    dest: "{{ postgresql_patroni_patroni_config_path }}"
+    owner: "{{ postgresql_patroni_postgresql_remote_user }}"
+    group: "{{ postgresql_patroni_postgresql_remote_user }}"
+    mode: '0664'
+  register: patroni_restart
+
+- name: Restart patroni
+  ansible.builtin.shell: |
+    systemctl daemon-reload
+    systemctl enable patroni
+    systemctl restart patroni
+  when: patroni_restart.changed
+
+- name: Wait for Patroni to become available
+  ansible.builtin.uri:
+    url: "http://{{ _postgresql_patroni_local_ip_address }}:8008/health"
+    method: GET
+  register: patroni_status
+  until: patroni_status.status == 200
+  retries: 100
+  delay: 10
+
+- name: Ensure jq is installed 
+  ansible.builtin.package: 
+    name: jq 
+    state: present
+
+- name: Fetch master node name
+  ansible.builtin.shell: |
+    {{ postgresql_patroni_python_venv_path }}/bin/patronictl -c {{ postgresql_patroni_patroni_config_path }} list -f json | \
+    jq -r '.[] | select(.Role == "Leader") | .Member'
+  register: master_node_name_query
+
+- name: Set is_master_node
+  ansible.builtin.set_fact:
+    is_master_node: "{{ master_node_name_query.stdout == postgresql_patroni_node_name }}"
+
+- name: Create postgresql users
+  community.postgresql.postgresql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    state: present
+    login_host: "{{ _postgresql_patroni_local_ip_address }}"
+    login_password: "{{ postgresql_patroni_superuser_password }}"
+  loop: "{{ postgresql_patroni_postgres_users }}"
+  vars:
+    ansible_python_interpreter: "{{ postgresql_patroni_python_venv_path }}/bin/python"
+  when: is_master_node
+
+- name: Create postgresql databases
+  community.postgresql.postgresql_db:
+    name: "{{ item.name }}"
+    owner: "{{ item.owner }}"
+    state: present
+    login_host: "{{ _postgresql_patroni_local_ip_address }}"
+    login_password: "{{ postgresql_patroni_superuser_password }}"
+  loop: "{{ postgresql_patroni_postgres_databases }}"
+  vars:
+    ansible_python_interpreter: "{{ postgresql_patroni_python_venv_path }}/bin/python"
+  when: is_master_node

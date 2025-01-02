@@ -1,0 +1,10 @@
+---
+# defaults file for ansible-role-etcd
+etcd_version: v3.5.17
+etcd_remote_user: etcd
+etcd_installation_dir: /home/xvsvg/etcd/install
+etcd_binary_dir: /usr/local/bin
+etcd_systemd_dir: /etc/systemd/system
+etcd_node_name: etcd-haproxy
+etcd_data_dir: "/var/lib/etcd/{{ etcd_node_name }}.etcd"
+etcd_host_interface_name: eth0

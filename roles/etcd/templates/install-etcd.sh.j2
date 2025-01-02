@@ -1,0 +1,23 @@
+ETCD_VER={{ etcd_version }}
+INSTALLATION_DIR={{ etcd_installation_dir }}
+BINARY_DIR={{ etcd_binary_dir }}
+
+# choose either URL
+GOOGLE_URL=https://storage.googleapis.com/etcd
+GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+DOWNLOAD_URL=${GOOGLE_URL}
+
+rm -f $INSTALLATION_DIR/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -rf $INSTALLATION_DIR/etcd-download-test && mkdir -p $INSTALLATION_DIR/etcd-download-test
+
+curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o $INSTALLATION_DIR/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf $INSTALLATION_DIR/etcd-${ETCD_VER}-linux-amd64.tar.gz -C $INSTALLATION_DIR/etcd-download-test --strip-components=1
+rm -f $INSTALLATION_DIR/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+$INSTALLATION_DIR/etcd-download-test/etcd --version
+$INSTALLATION_DIR/etcd-download-test/etcdctl version
+$INSTALLATION_DIR/etcd-download-test/etcdutl version
+
+mv $INSTALLATION_DIR/etcd-download-test/etcd $BINARY_DIR/
+mv $INSTALLATION_DIR/etcd-download-test/etcdctl $BINARY_DIR/
+mv $INSTALLATION_DIR/etcd-download-test/etcdutl $BINARY_DIR/

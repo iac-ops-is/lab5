@@ -1,0 +1,38 @@
+---
+# defaults file for ansible-role-postgresql-patroni
+postgresql_patroni_node_name: devops-pg11
+postgresql_patroni_interface_name: eth0
+postgresql_patroni_etcd_host: 158.160.68.10
+postgresql_patroni_python_venv_name: pg
+postgresql_patroni_python_venv_path: "/usr/local/share/venv/{{ postgresql_patroni_python_venv_name }}"
+postgresql_patroni_postgresql_major_version: 16
+postgresql_patroni_apt_key_url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+postgresql_patroni_apt_repo_url: https://apt.postgresql.org/pub/repos/apt
+postgresql_patroni_data_dir: /dev/data/patroni
+postgresql_patroni_systemd_dir: /etc/systemd/system
+
+postgresql_patroni_superuser_login: postgres
+postgresql_patroni_superuser_password: password
+
+postgresql_patroni_replication_login: replicator
+postgresql_patroni_replication_password: password
+
+postgresql_patroni_patroni_config_path: /etc/patroni.yml
+postgresql_patroni_postgresql_remote_user: postgres
+
+postgresql_patroni_postgres_users:
+  - name: admin
+    password: admin
+  - name: auth
+    password: auth
+
+postgresql_patroni_postgres_databases:
+  - name: admin
+    owner: admin
+  - name: auth
+    owner: auth
+
+postgresql_patroni_postgres_parameters:
+  unix_socket_directories: '.'
+  synchronous_commit: "on"
+  synchronous_standby_names: "*"

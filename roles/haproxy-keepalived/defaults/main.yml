@@ -1,0 +1,15 @@
+---
+# defaults file for ansible-role-haproxy-keepalived
+haproxy_keepalived_haproxy_cfg_path: /etc/haproxy/haproxy.cfg
+haproxy_keepalived_haproxy_cfg_template: haproxy.cfg.j2
+
+haproxy_keepalived_keepalived_conf_path: /etc/keepalived/keepalived.conf
+haproxy_keepalived_keepalived_conf_template: keepalived.conf.j2
+
+haproxy_keepalived_remote_user: root
+
+haproxy_keepalived_postgresql_hosts:
+  - name: pg_1
+    host: 158.160.78.97
+  - name: pg_2
+    host: 51.250.102.166

@@ -1,0 +1,28 @@
+# DEVOPS PLAYBOOK
+---
+# - name: Print all facts
+#   hosts: etcd
+#   tasks:
+#     - name: debug
+#       debug:
+#         var: ansible_facts
+# сетевой интерфейс может отличаться у разных машин, надо найти название того, у которого
+# ipv4 совпадает с ip хоста
+- name: Setup etcd on ubuntu 24.02
+  hosts: etcd
+  gather_facts: yes
+  become: true
+  roles:
+    - etcd
+
+- name: Setup haproxy-keepalived on ubuntu 24.02
+  hosts: haproxy_keepalived
+  become: true
+  roles:
+    - haproxy-keepalived
+
+- name: Setup postgresql-patroni on ubuntu 24.02
+  hosts: pg
+  become: true
+  roles:
+    - postgresql-patroni

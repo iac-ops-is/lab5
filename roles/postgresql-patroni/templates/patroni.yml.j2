@@ -1,0 +1,49 @@
+scope: postgres
+namespace: /db/
+name: {{ postgresql_patroni_node_name }}
+
+restapi:
+    listen: {{ _postgresql_patroni_local_ip_address }}:8008
+    connect_address: {{ _postgresql_patroni_local_ip_address }}:8008
+etcd:
+    hosts: {{ postgresql_patroni_etcd_host }}:2379
+
+bootstrap:
+    dcs:
+        ttl: 30
+        loop_wait: 10
+        retry_timeout: 10
+        maximum_lag_on_failover: 1048576
+        postgresql:
+            use_pg_rewind: true
+
+    initdb:
+    - encoding: UTF8
+    - data-checksums
+
+    pg_hba:
+    - host replication replicator 127.0.0.1/32 md5
+    - host replication replicator {{ _postgresql_patroni_local_ip_address }}/0 md5
+    - host replication replicator {{ _postgresql_patroni_local_ip_address }}/0 md5
+    - host all all 0.0.0.0/0 md5
+
+postgresql:
+    listen: {{ _postgresql_patroni_local_ip_address }}:5432
+    connect_address: {{ _postgresql_patroni_local_ip_address }}:5432
+    data_dir: {{ postgresql_patroni_data_dir }}/
+    pgpass: /tmp/pgpass
+    authentication:
+        replication:
+            username: {{ postgresql_patroni_replication_login }}
+            password: {{ postgresql_patroni_replication_password }}
+        superuser:
+            username: {{ postgresql_patroni_superuser_login }}
+            password: {{ postgresql_patroni_superuser_password }}
+    parameters:
+        {{ postgresql_patroni_postgres_parameters | to_nice_yaml | indent(8) }}
+
+tags:
+    nofailover: false
+    noloadbalance: false
+    clonefrom: false
+    nosync: false

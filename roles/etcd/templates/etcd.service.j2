@@ -1,0 +1,23 @@
+[Unit]
+Description=etcd service
+Documentation=https://github.com/coreos/etcd
+
+[Service]
+User={{ etcd_remote_user }}
+Type=notify
+ExecStart=etcd \
+    --name {{ etcd_node_name }} \
+    --listen-client-urls http://0.0.0.0:2379 \
+    --listen-peer-urls http://0.0.0.0:2380 \
+    --initial-advertise-peer-urls http://{{ _etcd_local_ip_address }}:2380 \
+    --initial-cluster='{{ etcd_node_name }}=http://{{ _etcd_local_ip_address }}:2380' \
+    --initial-cluster-state new \
+    --initial-cluster-token node1 \
+    --advertise-client-urls http://{{ _etcd_local_ip_address }}:2379 \
+    --enable-v2='true' \
+    --data-dir='{{ etcd_data_dir }}'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

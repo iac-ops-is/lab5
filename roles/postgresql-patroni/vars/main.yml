@@ -1,0 +1,4 @@
+---
+# vars file for ansible-role-postgresql-patroni
+_postgresql_patroni_installation_dir: /usr/lib/postgresql
+_postgresql_patroni_local_ip_address: "{{ lookup('vars', 'ansible_' + postgresql_patroni_interface_name)['ipv4']['address'] }}"

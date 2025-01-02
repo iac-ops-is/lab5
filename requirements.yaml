@@ -1,0 +1,12 @@
+---
+- src: https://github.com/iac-ops-is/etcd.git
+  version: master
+  name: etcd
+
+- src: https://github.com/iac-ops-is/haproxy-keepalive.git
+  version: master
+  name: haproxy-keepalived
+
+- src: https://github.com/iac-ops-is/postgres.git
+  version: master
+  name: postgresql-patroni

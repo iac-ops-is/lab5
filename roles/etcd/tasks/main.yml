@@ -1,0 +1,55 @@
+---
+# tasks file for ansible-role-etcd
+- name: Create {{ etcd_remote_user }} group
+  ansible.builtin.group:
+    name: "{{ etcd_remote_user }}"
+    state: present
+
+- name: Create {{ etcd_remote_user }} user
+  ansible.builtin.user:
+    name: "{{ etcd_remote_user }}"
+    state: present
+    password: "{{ _etcd_default_password }}"
+    group: "{{ etcd_remote_user }}"
+    shell: /bin/bash
+
+- name: Create an etcd directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ etcd_data_dir }}"
+    state: directory
+    mode: '0755'
+    group: "{{ etcd_remote_user }}"
+    owner: "{{ etcd_remote_user }}"
+
+- name: Create an installation directory if it does not exist
+  ansible.builtin.file:
+    path: "{{ etcd_installation_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy installation script
+  ansible.builtin.template:
+    src: "{{ _etcd_installation_script_name }}.j2"
+    dest: "{{ _etcd_installation_script_path }}"
+    owner: "{{ etcd_remote_user }}"
+    group: "{{ etcd_remote_user }}"
+    mode: '0750'
+  register: installation_script
+
+- name: Execute installation script
+  ansible.builtin.shell: |
+    {{ _etcd_installation_script_path }}
+  when: installation_script.changed
+  notify:
+    - Restart systemd
+    - Restart etcd
+
+- name: Copy systemd unit
+  ansible.builtin.template:
+    src: "etcd.service.j2"
+    dest: "{{ etcd_systemd_dir }}/etcd.service"
+    owner: "{{ etcd_remote_user }}"
+    group: "{{ etcd_remote_user }}"
+    mode: '0750'
+  notify:
+    - Restart etcd

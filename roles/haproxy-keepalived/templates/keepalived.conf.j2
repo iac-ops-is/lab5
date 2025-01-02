@@ -1,0 +1,21 @@
+vrrp_script chk_haproxy {
+    script "/usr/bin/killall -0 haproxy"
+    interval 2
+    weight 2
+}
+
+vrrp_instance VI_1 {
+    interface enp0s8
+    virtual_router_id 51
+
+
+    state MASTER
+    priority 102
+
+    virtual_ipaddress {
+      10.10.0.218
+  }
+  track_script {
+    chk_haproxy
+  }
+}

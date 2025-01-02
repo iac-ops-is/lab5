@@ -1,0 +1,9 @@
+---
+# handlers file for ansible-role-haproxy-keepalived
+- name: Restart keepalived
+  ansible.builtin.shell: |
+    systemctl restart keepalived
+
+- name: Restart haproxy
+  ansible.builtin.shell: |
+    systemctl restart haproxy

@@ -1,0 +1,3 @@
+---
+remote_user: vagrant
+template_path: "infra/templates"
